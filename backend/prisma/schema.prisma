@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ReportType {
+  PROGRESS
+  CAREER_GUIDANCE
+  LEARNING_PLAN
+  ASSESSMENT
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Profile data as JSON
+  profileData Json?
+
+  // Relations
+  student   Student?
+  tutor     Tutor?
+
+  @@map("users")
+}
+
+model Student {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  grade         Int
+  subjects      String[] // Array of subjects the student is studying
+  interests     String[] // Array of interest topics
+  goals         String[] // Array of learning/career goals
+  learningStyle String?  // Student's preferred learning style
+  targetScore   Int?     // Target score for academic goals
+  currentLevel  String?  // Current academic level (Beginner/Intermediate/Advanced)
+  totalSessions Int      @default(0)
+  averageRating Float    @default(0)
+  studyHours    Int      @default(0)
+  knowledgeGraph Json?   // AI-generated knowledge graph
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions  Session[]
+  reports   Report[]
+
+  @@map("students")
+}
+
+model Tutor {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  expertise    String[] // Array of expertise areas
+  subjects     String[] // Array of subjects taught
+  keywords     String[] // Array of keywords for matching
+  sampleVideos String[] // Array of video URLs
+  bio          String?
+  rating       Float    @default(0)
+  experience   Int      @default(0) // Years of experience
+  education    String?  // Educational background
+  hourlyRate   Float
+  isAvailable  Boolean  @default(true)
+  totalSessions Int     @default(0)
+  totalStudents Int     @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions Session[]
+
+  @@map("tutors")
+}
+
+model Session {
+  id            String        @id @default(cuid())
+  studentId     String
+  tutorId       String
+  subject       String?       // Subject taught in this session
+  topic         String?       // Specific topic covered
+  scheduledTime DateTime
+  duration      Int           // Duration in minutes
+  status        SessionStatus @default(SCHEDULED)
+  rating        Int?          // Session rating (1-5)
+  score         Int?          // Student's score in session
+  notes         String?       // Session notes
+  studentFeedback String?     // Student's feedback
+  tutorFeedback  String?      // Tutor's feedback
+  sessionNotes  String?
+  videoUrl      String?
+  completedAt   DateTime?     // When session was completed
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  tutor   Tutor   @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Report {
+  id         String     @id @default(cuid())
+  studentId  String
+  reportType ReportType
+  content    Json       // Report content as JSON
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model KnowledgeGraph {
+  id          String   @id @default(cuid())
+  studentId   String   @unique
+  graphData   Json     // Knowledge graph structure
+  lastUpdated DateTime @default(now())
+
+  @@map("knowledge_graphs")
+}
+
+model CareerMilestone {
+  id          String   @id @default(cuid())
+  studentId   String
+  title       String
+  description String
+  completed   Boolean  @default(false)
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("career_milestones")
+} 
