@@ -7,6 +7,8 @@
 - [Key Innovation](#🔬-key-innovation)
 - [Performance Highlights](#📊-performance-highlights)
 - [Architecture](#🏗️-architecture)
+- [Methodology & Technical Details](#⚙️-methodology--technical-details)
+- [Project Structure](#📂-project-structure)
 - [Tech Stack](#🧱-tech-stack)
 - [Quick Start](#💻-quick-start)
 
@@ -46,6 +48,39 @@ graph LR
     Server <-->|Prisma ORM| RDS[AWS RDS PostgreSQL]
     Server -->|Stripe Checkout| Stripe[Stripe API]
     Server <-->|Recommendations| AIService[FastAPI Python Microservice]
+```
+
+---
+
+## ⚙️ Methodology & Technical Details
+### Multitenancy and Prisma Schema Layout
+IntelliDART enforces role-based separation using Prisma schema models. A single `User` model links to separate `Student` and `Tutor` profiles, ensuring that specific metadata (e.g. hourly rate, grades, schedules) are isolated.
+The database comprises 7 models:
+- `User`: Base authentication account (name, email, password hash, role).
+- `Student`: Linked to users, tracks class levels and payment accounts.
+- `Tutor`: Tracks hourly rates, verified subjects, and average reviews.
+- `Session`: Tutoring schedule bookings linking student, tutor, and status.
+- `Report`: GenAI performance summaries issued after sessions.
+- `KnowledgeGraph`: Tracks skill-acquisition trees for students.
+- `CareerMilestone`: Chronological goals for academic progression.
+
+### WebRTC Classroom Architecture
+When a session starts, the backend initializes a WebRTC signaling route. The student and tutor client apps complete a handshake (SDP offer/answer exchange) through Socket.IO and establish a direct Peer-to-Peer connection. Audio, video, and whiteboards are synced directly between browsers to ensure sub-100ms latency.
+
+### Stripe Billing Integration
+Payments utilize the Stripe Node library to establish checkout sessions. When a student schedules a session, the backend calls Stripe to hold the funds. Upon successful tutor verification of session completion, a payout webhook is dispatched, automating earnings distribution.
+
+---
+
+## 📂 Project Structure
+```
+IntelliDART/
+├── frontend/                 # React frontend application
+├── backend/                  # Node.js/Express backend API
+│   ├── src/controllers/      # Session and payment logic
+│   └── prisma/schema.prisma  # Relational database models
+├── ai-service/              # Python FastAPI AI microservice
+└── database/                # Database migrations and schema
 ```
 
 ---
